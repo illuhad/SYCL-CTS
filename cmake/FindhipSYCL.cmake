@@ -1,13 +1,7 @@
-find_program(SYCLCC_EXECUTABLE syclcc-clang
-    PATH_SUFFIXES bin)
-
-if(NOT SYCLCC_EXECUTABLE)
-  message(SEND_ERROR "Could not find hipSYCL syclcc-clang compiler")
-endif()
-
-set(CMAKE_CXX_COMPILER  ${SYCLCC_EXECUTABLE})
+find_package(hipSYCL CONFIG REQUIRED)
 
 add_library(SYCL::SYCL INTERFACE IMPORTED GLOBAL)
+set_target_properties(SYCL::SYCL PROPERTIES INTERFACE_LINK_LIBRARIES hipSYCL::hipSYCL-rt)
 # add_sycl_executable_implementation function
 # Builds a SYCL program, compiling multiple SYCL test case source files into a
 # test executable, invoking a single-source/device compiler
@@ -24,7 +18,9 @@ function(add_sycl_executable_implementation)
 
     add_library(${object_lib_name} OBJECT ${test_cases_list})
     add_executable(${exe_name} $<TARGET_OBJECTS:${object_lib_name}>)
-
+    add_sycl_to_target(TARGET ${object_lib_name} SOURCES ${test_cases_list})
+    add_sycl_to_target(TARGET ${exe_name} SOURCES)
+    
     set_target_properties(${object_lib_name} PROPERTIES
         INCLUDE_DIRECTORIES $<TARGET_PROPERTY:${exe_name},INCLUDE_DIRECTORIES>
         COMPILE_DEFINITIONS $<TARGET_PROPERTY:${exe_name},COMPILE_DEFINITIONS>
